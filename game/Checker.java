@@ -15,12 +15,13 @@ import models.Position;
 public class Checker {
 	
 	boolean debug = false;
-	
-	public Player human = new Player();
-	public Player ai = new Player();
 	int boardSize = 8;
 	int rowsOccupied = 3;
+	public Player human = new Player();
+	public Player ai = new Player();
+	
 	public int[][] board = new int[boardSize][boardSize];
+	
 	public int[] evenHuman = new int[ ]{0, 2, 4, 6};
 	public int[] oddHuman = new int[ ]{1, 3, 5, 7};
 	
@@ -64,7 +65,7 @@ public class Checker {
 	public void playTurn() {
 		List<Move> allMoves = getAllPossibleMoves(ai);
 		if(!allMoves.isEmpty()) {
-			if(allMoves.get(0).mandatory) System.out.println("Must take Move");
+			
 		} else {
 			System.out.println("AI is has ran out moves :( You win");
 			System.exit(0);
@@ -72,7 +73,7 @@ public class Checker {
 		}
 		if(debug) System.out.println("From " + allMoves.get(0).current.x + " " + allMoves.get(0).current.y  + " New Location " + allMoves.get(0).newLocation.x + " " + allMoves.get(0).newLocation.y);
 		updateBoard(allMoves.get(0), board, human, ai);
-		printBoard();
+		//printBoard();
 	}
 	
 	
@@ -94,6 +95,7 @@ public class Checker {
 	}
 	
 	public void updateBoard(Move m, int[][] gameBoard, Player human1, Player machine) {
+		if(debug) System.out.println("Move : " + m.current.x + " " + m.current.y + " " + m.newLocation.x + " " + m.newLocation.y);
 		if(gameBoard[m.current.x][m.current.y] == 1) {
 			for(Piece p : human1.getArmy()) {
 				if((p.location.x == m.current.x) && (p.location.y == m.current.y)) {
@@ -102,6 +104,7 @@ public class Checker {
 						int diff_y = m.newLocation.y - m.current.y;
 						p.location.x = m.newLocation.x + diff_x;
 						p.location.y = m.newLocation.y + diff_y;
+						if(p.location.x == 0) p.rank = true; 
 						board[p.location.x][p.location.y] = 1;
 						int removeIdx = -1;
 						for(int i = 0; i < machine.getArmy().size(); i++) {	
@@ -118,6 +121,7 @@ public class Checker {
 					else {
 						p.location.x = m.newLocation.x;
 						p.location.y = m.newLocation.y;
+						if(p.location.x == 0) p.rank = true; 
 						gameBoard[m.newLocation.x][m.newLocation.y] = 1;
 					}
 				}
@@ -130,6 +134,7 @@ public class Checker {
 						int diff_y = m.newLocation.y - m.current.y;
 						p.location.x = m.newLocation.x + diff_x;
 						p.location.y = m.newLocation.y + diff_y;
+						if(p.location.x == 7) p.rank = true;
 						board[p.location.x][p.location.y] = -1;
 						int removeIdx = -1;
 						for(int i = 0; i < human1.getArmy().size(); i++) {	
@@ -146,6 +151,7 @@ public class Checker {
 					else {
 						p.location.x = m.newLocation.x;
 						p.location.y = m.newLocation.y;
+						if(p.location.x == 7) p.rank = true;
 						gameBoard[m.newLocation.x][m.newLocation.y] = -1;
 					}
 				}
@@ -155,6 +161,7 @@ public class Checker {
 	}
 	
 	public ArrayList<Move> getSinglePawnAllMoves(Position l, boolean direction, int val, boolean king) {
+		if(debug) System.out.println("Pawn Location : " + l.x + " " + l.y + " val  " + val + " King  " + king);
 		int x = l.x;
 		int y = l.y;
 		ArrayList<Move> moves = new ArrayList<Move>();
@@ -180,6 +187,7 @@ public class Checker {
 					if(board[m.newLocation.x][m.newLocation.y] == 0) validMoves.add(m);
 				} else {
 					if(king) {
+						if(debug) System.out.println("Inside King Human : ");
 						int diff_x = m.newLocation.x - m.current.x;
 						int diff_y = m.newLocation.y - m.current.y;
 						if(board[m.newLocation.x][m.newLocation.y] + val == 0 && validCapture(m, diff_x, diff_y)) {
@@ -205,6 +213,7 @@ public class Checker {
 					if(board[m.newLocation.x][m.newLocation.y] == 0) validMoves.add(m);
 				} else {
 					if(king) {
+						if(debug) System.out.println("Inside King AI : ");
 						int diff_x = m.newLocation.x - m.current.x;
 						int diff_y = m.newLocation.y - m.current.y;
 						if(board[m.newLocation.x][m.newLocation.y] + val == 0  && validCapture(m, diff_x, diff_y)) {
@@ -213,7 +222,7 @@ public class Checker {
 							m.mandatory = true;
 							return validMoves;
 						}
-						if(board[m.newLocation.x][m.newLocation.y] != val) validMoves.add(m);
+						if(board[m.newLocation.x][m.newLocation.y] == 0) validMoves.add(m);
 					}
 				}
 			}
@@ -233,14 +242,47 @@ public class Checker {
 
 	public void start() {
 		// TODO Auto-generated method stub
-		printBoard();
 		//printPlayer(ai);
 		//printPlayer(human);
 		//getAllPossibleMoves(ai);
 		//getAllPossibleMoves(human);
+		//sc.nextLine();
+		try {
+			human.clone();
+		} catch (CloneNotSupportedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		playTurn();
+		if(debug) System.out.println("After AI turn");
+		printBoard();
+		while(hasToJumpAgain(ai)) {
+			playTurn();
+			printBoard();
+		}
 		getUserInput();
+		Scanner sc = new Scanner(System.in);
+		if(debug) System.out.println("After User turn");
+		printBoard();
+		while(hasToJumpAgain(human)) {
+			getUserInput();
+			printBoard();
+		}  
+		if(debug) {
+			for(Piece p : human.getArmy()) {
+				System.out.println("Human army : " + p.location.x + " " + p.location.y + " rank " + p.rank);
+			}
+			for(Piece p : ai.getArmy()) {
+				System.out.println("AI army : " + p.location.x + " " + p.location.y  + " rank " + p.rank);
+			}
+		}
 		start();
+	}
+	
+	public boolean hasToJumpAgain(Player p) {
+		List<Move> allmoves = getAllPossibleMoves(p);
+		if(!allmoves.isEmpty()) return allmoves.get(0).mandatory;
+		return false;
 	}
 	
 	public void getUserInput() {
@@ -260,7 +302,8 @@ public class Checker {
 		}
 		for(Move m : moves) {
 				updateBoard(m, board, human, ai);
-				printBoard();
+				//printBoard();
+				//start();
 				return;
 		}
 		System.out.println("Invalid move, Please try again !");

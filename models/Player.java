@@ -11,7 +11,7 @@ import java.util.ArrayList;
  */
 
 
-public class Player {
+public class Player implements Cloneable {
 	int score = 0;
 	boolean hasToMove = false;
 	boolean teamOn; // true is human(A)
@@ -41,4 +41,18 @@ public class Player {
 	public void setArmy(ArrayList<Piece> army) {
 		this.army = army;
 	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		Player clone = new Player();
+		clone.setTeamOn(this.getTeamOn());
+		clone.setScore(this.getScore());
+		ArrayList<Piece> armyClone = new ArrayList<Piece>();
+		for(Piece p : this.army) {
+			Piece pClone = new Piece(p.team, p.rank, new Position(p.location.x, p.location.y));
+			armyClone.add(pClone);
+		}
+        return clone;
+    }
+	
 }
