@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-import javax.tools.DocumentationTool.Location;
 
 import models.Move;
 import models.Piece;
@@ -14,6 +13,9 @@ import models.Position;
 
 
 public class Checker {
+	
+	boolean debug = false;
+	
 	public Player human = new Player();
 	public Player ai = new Player();
 	int boardSize = 8;
@@ -22,11 +24,14 @@ public class Checker {
 	public int[] evenHuman = new int[ ]{0, 2, 4, 6};
 	public int[] oddHuman = new int[ ]{1, 3, 5, 7};
 	
-	public Checker() {
+	
+	public Checker(boolean debug) {
+		// TODO Auto-generated constructor stub
+		this.debug = debug;
 		human.setTeamOn(true);
 		setPlayerPieces();
 	}
-	
+
 	public void setPlayerPieces() {
 		for(int i = 0; i < 3; i++) {
 			if(i%2 == 0) {
@@ -58,7 +63,14 @@ public class Checker {
 	
 	public void playTurn() {
 		List<Move> allMoves = getAllPossibleMoves(ai);
-		System.out.println("From " + allMoves.get(0).current.x + " " + allMoves.get(0).current.y  + " New Location " + allMoves.get(0).newLocation.x + " " + allMoves.get(0).newLocation.y);
+		if(!allMoves.isEmpty()) {
+			if(allMoves.get(0).mandatory) System.out.println("Must take Move");
+		} else {
+			System.out.println("AI is has ran out moves :( You win");
+			System.exit(0);
+			return;
+		}
+		if(debug) System.out.println("From " + allMoves.get(0).current.x + " " + allMoves.get(0).current.y  + " New Location " + allMoves.get(0).newLocation.x + " " + allMoves.get(0).newLocation.y);
 		updateBoard(allMoves.get(0), board, human, ai);
 		printBoard();
 	}
@@ -71,6 +83,7 @@ public class Checker {
 			allMoves.addAll(getSinglePawnAllMoves(pawn.location, p.getTeamOn(), val, pawn.rank));
 		}
 		for(Move m : allMoves) {
+			if(debug) System.out.println("Move : " + m.current.x + " " + m.current.y + " " + m.newLocation.x + " " + m.newLocation.y + " " + m.mandatory);
 			if(m.mandatory) {
 				List<Move> singleMove = new ArrayList<Move>();
 				singleMove.add(m);
@@ -84,9 +97,12 @@ public class Checker {
 		if(gameBoard[m.current.x][m.current.y] == 1) {
 			for(Piece p : human1.getArmy()) {
 				if((p.location.x == m.current.x) && (p.location.y == m.current.y)) {
-					p.location.x = m.newLocation.x;
-					p.location.y = m.newLocation.y;
-					if(gameBoard[m.newLocation.x][m.newLocation.y] == -1) {
+					if(m.mandatory) {
+						int diff_x = m.newLocation.x - m.current.x;
+						int diff_y = m.newLocation.y - m.current.y;
+						p.location.x = m.newLocation.x + diff_x;
+						p.location.y = m.newLocation.y + diff_y;
+						board[p.location.x][p.location.y] = 1;
 						int removeIdx = -1;
 						for(int i = 0; i < machine.getArmy().size(); i++) {	
 							if((machine.getArmy().get(i).location.x == m.newLocation.x) && (machine.getArmy().get(i).location.y == m.newLocation.y)) {
@@ -95,15 +111,26 @@ public class Checker {
 							}
 						}
 						machine.getArmy().remove(removeIdx);
+						gameBoard[m.current.x][m.current.y] = 0;
+						gameBoard[m.newLocation.x][m.newLocation.y] = 0;
+						return;
+					}
+					else {
+						p.location.x = m.newLocation.x;
+						p.location.y = m.newLocation.y;
+						gameBoard[m.newLocation.x][m.newLocation.y] = 1;
 					}
 				}
 			}
 		} else {
 			for(Piece p : machine.getArmy()) {
 				if((p.location.x == m.current.x) && (p.location.y == m.current.y)) {
-					p.location.x = m.newLocation.x;
-					p.location.y = m.newLocation.y;
-					if(gameBoard[m.newLocation.x][m.newLocation.y] == 1) {
+					if(m.mandatory) {
+						int diff_x = m.newLocation.x - m.current.x;
+						int diff_y = m.newLocation.y - m.current.y;
+						p.location.x = m.newLocation.x + diff_x;
+						p.location.y = m.newLocation.y + diff_y;
+						board[p.location.x][p.location.y] = -1;
 						int removeIdx = -1;
 						for(int i = 0; i < human1.getArmy().size(); i++) {	
 							if((human1.getArmy().get(i).location.x == m.newLocation.x) && (human1.getArmy().get(i).location.y == m.newLocation.y)) {
@@ -112,11 +139,18 @@ public class Checker {
 							}
 						}
 						human1.getArmy().remove(removeIdx);
+						gameBoard[m.current.x][m.current.y] = 0;
+						gameBoard[m.newLocation.x][m.newLocation.y] = 0;
+						return;
+					}
+					else {
+						p.location.x = m.newLocation.x;
+						p.location.y = m.newLocation.y;
+						gameBoard[m.newLocation.x][m.newLocation.y] = -1;
 					}
 				}
 			}
 		}
-		gameBoard[m.newLocation.x][m.newLocation.y] = gameBoard[m.current.x][m.current.y];
 		gameBoard[m.current.x][m.current.y] = 0;
 	}
 	
@@ -135,41 +169,52 @@ public class Checker {
 			}
 			if(direction) {
 				if(x > m.newLocation.x) {
-					if(board[m.newLocation.x][m.newLocation.y] + val == 0) {
+					int diff_x = m.newLocation.x - m.current.x;
+					int diff_y = m.newLocation.y - m.current.y;
+					if(board[m.newLocation.x][m.newLocation.y] + val == 0 && validCapture(m, diff_x, diff_y)) {
 						validMoves.clear();
 						validMoves.add(m);
 						m.mandatory = true;
 						return validMoves;
 					}
-					if(board[m.newLocation.x][m.newLocation.y] != val) validMoves.add(m);
-				}
-				if(king) {
-					if(board[m.newLocation.x][m.newLocation.y] + val == 0) {
-						validMoves.clear();
-						validMoves.add(m);
-						m.mandatory = true;
-						return validMoves;
+					if(board[m.newLocation.x][m.newLocation.y] == 0) validMoves.add(m);
+				} else {
+					if(king) {
+						int diff_x = m.newLocation.x - m.current.x;
+						int diff_y = m.newLocation.y - m.current.y;
+						if(board[m.newLocation.x][m.newLocation.y] + val == 0 && validCapture(m, diff_x, diff_y)) {
+							validMoves.clear();
+							validMoves.add(m);
+							m.mandatory = true;
+							return validMoves;
+						}
+						if(board[m.newLocation.x][m.newLocation.y] == 0) validMoves.add(m);
 					}
-					if(board[m.newLocation.x][m.newLocation.y] != val) validMoves.add(m);
 				}
 			} else {
+				
 				if(x < m.newLocation.x) {
-					if(board[m.newLocation.x][m.newLocation.y] + val == 0) {
+					int diff_x = m.newLocation.x - m.current.x;
+					int diff_y = m.newLocation.y - m.current.y;
+					if(board[m.newLocation.x][m.newLocation.y] + val == 0  && validCapture(m, diff_x, diff_y)) {
 						validMoves.clear();
 						validMoves.add(m);
 						m.mandatory = true;
 						return validMoves;
 					}
-					if(board[m.newLocation.x][m.newLocation.y] != val) validMoves.add(m);
-				}
-				if(king) {
-					if(board[m.newLocation.x][m.newLocation.y] + val == 0) {
-						validMoves.clear();
-						validMoves.add(m);
-						m.mandatory = true;
-						return validMoves;
+					if(board[m.newLocation.x][m.newLocation.y] == 0) validMoves.add(m);
+				} else {
+					if(king) {
+						int diff_x = m.newLocation.x - m.current.x;
+						int diff_y = m.newLocation.y - m.current.y;
+						if(board[m.newLocation.x][m.newLocation.y] + val == 0  && validCapture(m, diff_x, diff_y)) {
+							validMoves.clear();
+							validMoves.add(m);
+							m.mandatory = true;
+							return validMoves;
+						}
+						if(board[m.newLocation.x][m.newLocation.y] != val) validMoves.add(m);
 					}
-					if(board[m.newLocation.x][m.newLocation.y] != val) validMoves.add(m);
 				}
 			}
 		}
@@ -177,6 +222,15 @@ public class Checker {
 	}
 	
 	
+	private boolean validCapture(Move m, int diff, int direction) {
+		// TODO Auto-generated method stub
+		if(m.newLocation.x + diff < 0 || m.newLocation.x + diff > 7 || m.newLocation.y + direction < 0 || m.newLocation.y + direction > 7) {
+			return false;
+		}
+		if(board[m.newLocation.x + diff][m.newLocation.y + direction] == 0) return true;
+		return false; 
+	}
+
 	public void start() {
 		// TODO Auto-generated method stub
 		printBoard();
@@ -191,20 +245,25 @@ public class Checker {
 	
 	public void getUserInput() {
 		// TODO Auto-generated method stub
+		/*
 		Scanner inp = new Scanner(System.in);
 		int x1 = inp.nextInt();
 		int y1 = inp.nextInt();
 		int x2 = inp.nextInt();
 		int y2 = inp.nextInt();
-		ArrayList<Move> moves = getSinglePawnAllMoves(new Position(x1, y1), true, 1, false);
-		for(Move m : moves) {
-			if(m.newLocation.x == x2 && m.newLocation.y == y2) {
-				updateBoard(m, board, human, ai);
-				//printBoard();
-				return;
-			}
+		*/
+		List<Move> moves = getAllPossibleMoves(human);
+		if(moves.isEmpty())  {
+			System.out.println("You lose :(");
+			System.exit(0);
+			return;
 		}
-		System.out.println("Invalid move, Please try again with a different move");
+		for(Move m : moves) {
+				updateBoard(m, board, human, ai);
+				printBoard();
+				return;
+		}
+		System.out.println("Invalid move, Please try again !");
 		getUserInput();
 	}
 
@@ -212,7 +271,12 @@ public class Checker {
 		for(int i = 0; i < boardSize; i++) {
 			System.out.println(" ");
 			for(int j = 0; j < boardSize; j++) {
-				System.out.print(board[i][j] + "  ");
+				if(board[i][j] == -1) {
+					System.out.print("A ");
+				} else if(board[i][j] == 1) {
+					System.out.print("B ");
+				}
+				else System.out.print("O ");
 			}
 		}
 		System.out.println(" ");
@@ -230,7 +294,12 @@ public class Checker {
 		for(int i = 0; i < boardSize; i++) {
 			System.out.println(" ");
 			for(int j = 0; j < boardSize; j++) {
-				System.out.print(playerBoard[i][j] + "  ");
+				if(playerBoard[i][j] == -1) {
+					System.out.print("A ");
+				} else if(playerBoard[i][j] == -1) {
+					System.out.print("B ");
+				}
+				else System.out.print(playerBoard[i][j] + "  ");
 			}
 		}
 		System.out.println(" ");
