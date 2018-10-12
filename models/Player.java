@@ -52,6 +52,7 @@ public class Player implements Cloneable {
 			Piece pClone = new Piece(p.team, p.rank, new Position(p.location.x, p.location.y));
 			armyClone.add(pClone);
 		}
+		clone.setArmy(armyClone);
         return clone;
     }
 	
