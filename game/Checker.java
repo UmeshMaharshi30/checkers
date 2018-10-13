@@ -287,7 +287,7 @@ public class Checker {
 			case 1:
 				readFileUpdateState();
 				System.out.println("Note it will exit if the game can be decided in few steps !");
-				Move m = getBestPossibleMove(board_main, human_main, ai_main, 4, true);
+				Move m = getBestPossibleMove(board_main, human_main, ai_main, depth, true);
 				if(m != null) System.out.println("Best Possible Move " + m.current.x + " " + m.current.y + " -> " + m.newLocation.x + " " + m.newLocation.y);
 				else System.out.println("No moves possible");
 				break;
@@ -419,8 +419,8 @@ public class Checker {
 			int[][] board_copy = copy_board(tempBoard);
 			List<Move> moves = getAllPossibleMoves(human_intel, board_copy);
 			if(moves.isEmpty())  {
-				System.out.println("You/Player B lose :(");
-				System.exit(0);
+				//System.out.println("You/Player B lose :(");
+				//System.exit(0);
 				return;
 			}
 			/*
