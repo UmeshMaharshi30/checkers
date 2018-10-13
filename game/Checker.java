@@ -22,7 +22,7 @@ public class Checker {
 	boolean debug = false;
 	int boardSize = 8;
 	int rowsOccupied = 3;
-	int depth = 4;
+	public int depth = 5;
 
 	String stateFile = "StateFile.txt";
 
@@ -121,6 +121,16 @@ public class Checker {
 						machine.getArmy().remove(removeIdx);
 						gameBoard[m.current.x][m.current.y] = 0;
 						gameBoard[m.newLocation.x][m.newLocation.y] = 0;
+						while(true) {
+							List<Move> jumpPoss = getSinglePawnAllMoves(p.location , p.team, 1, p.rank, gameBoard);
+							for(Move jump : jumpPoss) {
+								if(jump.mandatory) {
+									updateBoard(jump, gameBoard, human1, machine);
+									break;
+								}
+							}
+							break;
+						}
 						return;
 					}
 					else {
@@ -130,10 +140,6 @@ public class Checker {
 						gameBoard[m.newLocation.x][m.newLocation.y] = 1;
 					}
 				}
-			}
-			while(hasToJumpAgain(human1, machine, gameBoard) && m.mandatory) {
-				Move m1 = getBestPossibleMove(gameBoard,machine, human1, 0, true);
-				updateBoard(m1, gameBoard, human1, machine);
 			}
 		} else {
 			for(Piece p : machine.getArmy()) {
@@ -155,6 +161,16 @@ public class Checker {
 						human1.getArmy().remove(removeIdx);
 						gameBoard[m.current.x][m.current.y] = 0;
 						gameBoard[m.newLocation.x][m.newLocation.y] = 0;
+						while(true) {
+							List<Move> jumpPoss = getSinglePawnAllMoves(p.location , p.team, -1, p.rank, gameBoard);
+							for(Move jump : jumpPoss) {
+								if(jump.mandatory) {
+									updateBoard(jump, gameBoard, human1, machine);
+									break;
+								}
+							}
+							break;
+						}
 						return;
 					}
 					else {
@@ -165,10 +181,6 @@ public class Checker {
 					}
 					break;
 				}
-			}
-			while(hasToJumpAgain(machine, human1, gameBoard)  && m.mandatory) {
-				Move m1 = getBestPossibleMove(gameBoard,human1, machine, 0, true);
-				updateBoard(m1, gameBoard, human1, machine);
 			}
 		}
 		gameBoard[m.current.x][m.current.y] = 0;
@@ -260,9 +272,12 @@ public class Checker {
 		System.out.println("1 : Enter a state and Agent will return a move to be made for AI");
 		System.out.println("2 : Enter a state and Agent will return its Evaluation value");
 		System.out.println("3 : Enter a state and Agent will return all possible legal moves");
-		System.out.println("4 : To start a game Agent Vs Agent");
-		System.out.println("5 : To start a game Agent Vs Human");
+		System.out.println("4 : To start a game between Agent Vs Agent");
+		System.out.println("5 : To start a game between Agent Vs Human");
 		System.out.println("6 : To exit");
+		//System.out.println("6 : To start a between game Agent Vs Agent from scratch");
+		//System.out.println("7 : To start a game between Agent Vs Human from scratch");
+		//System.out.println("8 : To exit");
 		System.out.println("Note, very function takes the file as start input");
 		System.out.println("Have fun !");
 		int menu = 0;
@@ -419,7 +434,7 @@ public class Checker {
 			}
 			 */
 			Move best_possible = getRandomOfBestValues(moves);
-			if(debug) System.out.println("Human Auto : " + best_possible.current.x + " "  + best_possible.current.y + " -> " + best_possible.newLocation.x + " " + best_possible.newLocation.y);
+			//if(debug) System.out.println("Human Auto : " + best_possible.current.x + " "  + best_possible.current.y + " -> " + best_possible.newLocation.x + " " + best_possible.newLocation.y);
 			updateBoard(best_possible, tempBoard, human, machine);
 			return;
 			//System.out.println("Invalid move, Please try again !");
@@ -480,11 +495,11 @@ public class Checker {
 					try {
 						h1 = (Player)opp.clone();
 						m1 = (Player)player.clone();
-						printBoard(final_board);
+						//printBoard(final_board);
 						updateBoard(m0, final_board, h1, m1);
 						m0.profit = player.getTeamOn() ? (10)*stateValue(h1, m1, final_board) : (-10)*stateValue(h1, m1, final_board);
 						autoHumanMove(h1, m1, final_board);
-						printBoard(final_board);
+						//printBoard(final_board);
 						Move c1 = getBestPossibleMove(final_board, h1, m1, tempDepth - 1, !min_max);
 						if(c1 != null) m0.profit = m0.profit + c1.profit;
 						//System.out.println("Profit value : " + m0.profit);
@@ -553,12 +568,11 @@ public class Checker {
 
 	public boolean hasToJumpAgain(Player p, Player opp, int[][] tempBoard) {
 		List<Move> allmoves = getAllPossibleMoves(p,tempBoard);
-		/*
-		for(Move m : allmoves) {
-			System.out.println("Move : " + m.mandatory + " " + m.current.x + " " + m.current.y + " " + m.newLocation.x + " " + m.newLocation.y);
+		System.out.println("Allmoves : " + allmoves.size());
+		if(!allmoves.isEmpty()) {
+			System.out.println(allmoves.get(0).mandatory);
+			return allmoves.get(0).mandatory;
 		}
-		 */
-		if(!allmoves.isEmpty()) return allmoves.get(0).mandatory;
 		return false;
 	}
 
