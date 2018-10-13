@@ -50,10 +50,21 @@ public class Player implements Cloneable {
 		ArrayList<Piece> armyClone = new ArrayList<Piece>();
 		for(Piece p : this.army) {
 			Piece pClone = new Piece(p.team, p.rank, new Position(p.location.x, p.location.y));
+			pClone.rank = p.rank;
 			armyClone.add(pClone);
 		}
 		clone.setArmy(armyClone);
         return clone;
     }
+	
+	public double getProfit() {
+		double prof = 0.0;
+		for(Piece p : army) {
+			prof = prof + 1;
+			if(p.rank) prof = prof + 5;
+		}
+		return prof;
+		
+	}
 	
 }

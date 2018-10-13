@@ -8,7 +8,8 @@ public class App {
 		// TODO Auto-generated method stub
 		boolean debug = true;
 		Checker game = new Checker(debug);
-		game.start();
+		//game.start(true);
+		game.initSetup();
 	}
 
 }
